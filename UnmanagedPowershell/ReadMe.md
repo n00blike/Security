@@ -18,3 +18,14 @@ After this finding, I looked for a way to detect this DLL in any image, and Sysm
 The above config results in the generation of the log shown below:
 ![alt text](https://github.com/n00blike/Security/blob/main/UnmanagedPowershell/EventID%207.png)
 It is also worth noting that this can result in quite a few false positives, and to mitigate those false positives, I suggest using Sysmon Process Creation (Event ID 1) and Hash whitelisting on processes that are loading System.Management.Automation.
+Below is an splunk query that finds any process that has loaded the System.Management.Automation and it then correlates it with Event Code 1 to get the process information at the end of this query you can filter hashes by whitelisting to reduce false positives.
+```clojure
+index = * AND EventCode = 7 AND OriginalFileName="System.Management.Automation.dll" 
+| table process_id,OriginalFileName,ImageLoaded,Image 
+| join left=L right=R where L.process_id=R.ProcessId 
+    [ search index = * AND EventCode = 1 
+    | table LogonId,Image,SHA256,CommandLine,user,ProcessId] 
+| rename R.ProcessId as ProcessID,L.OriginalFileName as DLL_Name,L.ImageLoaded as DLL_Path
+,R.Image as Process_Path,R.LogonId as LogonID,R.SHA256 as Process_Hash,R.user as Running_User,R.CommandLine as CommandLine
+| fields - L.*,R.*
+```
