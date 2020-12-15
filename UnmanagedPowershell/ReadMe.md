@@ -8,11 +8,13 @@ During my research on detecting unmanaged Powershell, there was a DLL that seeme
 As an example, Blow Figure shows this DLL in a Powershell instance.
 ![alt text](https://github.com/n00blike/Security/blob/main/UnmanagedPowershell/Powershell.png)
 After this finding, I looked for a way to detect this DLL in any image, and Sysmon Image Load (Event ID 7) was the answer:
+```clojure
 <RuleGroup name="" groupRelation="or">
 <ImageLoad onmatch="include">
 <ImageLoaded condition="contains">system.management.automation</ImageLoaded>	
 </ImageLoad>
 </RuleGroup>
+```
 The above config results in the generation of the log shown below:
 ![alt text](https://github.com/n00blike/Security/blob/main/UnmanagedPowershell/EventID%207.png)
 It is also worth noting that this can result in quite a few false positives, and to mitigate those false positives, I suggest using Sysmon Process Creation (Event ID 1) and Hash whitelisting on processes that are loading System.Management.Automation.
